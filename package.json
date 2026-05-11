@@ -1,0 +1,8 @@
+{
+  "name": "blogging-api",
+  "version": "1.0.0",
+  "description": "RESTful API for a personal blogging platform",
+  "license": "MIT",
+  "scripts": {},
+  "type": "commonjs"
+}
