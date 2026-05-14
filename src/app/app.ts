@@ -1,5 +1,6 @@
 import express from 'express';
 import errorHandler from '../middleware/errors/error-handler.middleware';
+import postsRoutes from '../modules/posts/posts.routes';
 
 const app = express();
 
@@ -14,6 +15,8 @@ app.get('/health', (_req, res) => {
 
   res.status(200).send(result);
 });
+
+app.use('/posts', postsRoutes);
 
 app.use(errorHandler);
 
