@@ -1,3 +1,5 @@
+import type { PaginationMeta } from '../../types/pagination';
+
 export interface Post {
   id: number;
   title: string;
@@ -20,4 +22,9 @@ export interface UpdatePostDTO {
   content?: string;
   category?: string;
   tags?: string[];
+}
+
+export interface PostsListResult {
+  items: Post[];
+  meta: PaginationMeta;
 }
