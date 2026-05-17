@@ -1,65 +1,65 @@
 import type { Request, Response } from 'express';
-import * as service from './posts.service';
 import * as schema from './posts.schema';
+import * as service from './posts.service';
+import { safeParse } from '../../common/validation/safe-parse';
+import { handleResult } from '../../common/http/handle-result';
 
 export async function getPosts(req: Request, res: Response) {
-  const { term } = schema.getPostsQuerySchema.parse(req.query);
+  const queryResult = safeParse(schema.getPostsQuerySchema, req.query);
+  if (!queryResult.success) {
+    return handleResult(res, queryResult, 400);
+  }
 
-  const posts = service.getPosts(term);
+  const result = service.getPosts(queryResult.data);
 
-  const result = {
-    success: true,
-    data: posts,
-    error: null,
-  };
-
-  res.status(200).json(result);
+  return handleResult(res, result, 200);
 }
 
 export async function getPostById(req: Request, res: Response) {
-  const { id } = schema.postParamsSchema.parse(req.params);
+  const paramsResult = safeParse(schema.postParamsSchema, req.params);
+  if (!paramsResult.success) {
+    return handleResult(res, paramsResult, 400);
+  }
 
-  const post = service.getPostById(id);
+  const result = service.getPostById(paramsResult.data.id);
 
-  const result = {
-    success: true,
-    data: post,
-    error: null,
-  };
-
-  res.status(200).json(result);
+  return handleResult(res, result, 200);
 }
 
 export async function createPost(req: Request, res: Response) {
-  const dataPost = schema.createPostSchema.parse(req.body);
+  const bodyResult = safeParse(schema.createPostSchema, req.body);
+  if (!bodyResult.success) {
+    return handleResult(res, bodyResult, 400);
+  }
 
-  const post = service.createPost(dataPost);
+  const result = service.createPost(bodyResult.data);
 
-  res.status(201).json({
-    success: true,
-    data: post,
-    error: null,
-  });
+  return handleResult(res, result, 201);
 }
 
 export async function updatePost(req: Request, res: Response) {
-  const { id } = schema.postParamsSchema.parse(req.params);
+  const paramsResult = safeParse(schema.postParamsSchema, req.params);
+  if (!paramsResult.success) {
+    return handleResult(res, paramsResult, 400);
+  }
 
-  const dataPost = schema.updatePostSchema.parse(req.body);
+  const bodyResult = safeParse(schema.updatePostSchema, req.body);
+  if (!bodyResult.success) {
+    return handleResult(res, bodyResult, 400);
+  }
 
-  const updatedPost = service.updatePost(id, dataPost);
+  const result = service.updatePost(paramsResult.data.id, bodyResult.data);
 
-  res.status(200).json({
-    success: true,
-    data: updatedPost,
-    error: null,
-  });
+  return handleResult(res, result, 200);
 }
 
 export async function deletePost(req: Request, res: Response) {
-  const { id } = schema.postParamsSchema.parse(req.params);
+  const paramsResult = safeParse(schema.postParamsSchema, req.params);
+  if (!paramsResult.success) {
+    return handleResult(res, paramsResult, 400);
+  }
 
-  service.deletePost(id);
+  const result = service.deletePost(paramsResult.data.id);
 
-  res.status(204).end();
+  return handleResult(res, result, 200);
 }
