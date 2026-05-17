@@ -24,4 +24,10 @@ export const postParamsSchema = z.object({
 
 export const getPostsQuerySchema = z.object({
   term: z.string().optional(),
+  page: z.coerce.number().int().positive().min(1).default(1),
+  limit: z.coerce.number().int().positive().min(1).max(100).default(10),
+  sortBy: z.enum(['createdAt', 'title', 'category']).default('createdAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
 });
+
+export type GetPostsQuery = z.infer<typeof getPostsQuerySchema>;
