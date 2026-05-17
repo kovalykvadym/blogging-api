@@ -1,69 +1,125 @@
-import * as repository from './posts.repository';
-import type { CreatePostDTO, Post, UpdatePostDTO } from './posts.types';
-import AppError from '../../utils/errors/app-error';
+import type { PostError } from './posts.errors';
+import generateId from '../../utils/id-generator';
+import type { GetPostsQuery } from './posts.schema';
+import { type Result, ok, fail } from '../../common/result/result';
+import type { Post, CreatePostDTO, UpdatePostDTO, PostsListResult } from './posts.types';
+import { postsRepository } from './posts.repository.memory';
 
-export function getPosts(term?: string | undefined) {
-  const posts = repository.findAll();
+export function getPosts(query: GetPostsQuery): Result<PostsListResult, PostError> {
+  const { term, page, limit, sortBy, order } = query;
 
-  if (!term) {
-    return posts;
+  let posts = postsRepository.findAll();
+
+  if (term) {
+    const normalized = term.toLowerCase().trim();
+
+    posts = posts.filter(
+      (post) =>
+        post.title.toLowerCase().includes(normalized) ||
+        post.content.toLowerCase().includes(normalized) ||
+        post.category.toLowerCase().includes(normalized),
+    );
   }
 
-  const normalizeTerm = term.toLowerCase().trim();
-  return posts.filter(
-    (post) =>
-      post.title.toLowerCase().includes(normalizeTerm) ||
-      post.content.toLowerCase().includes(normalizeTerm) ||
-      post.category.toLowerCase().includes(normalizeTerm),
-  );
+  posts = posts.sort((a, b) => {
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+
+    return order === 'asc' ? (aValue > bValue ? 1 : -1) : aValue < bValue ? 1 : -1;
+  });
+
+  const total = posts.length;
+
+  const items = posts.slice((page - 1) * limit, page * limit);
+
+  return ok({
+    items,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
 }
 
-export function getPostById(id: number) {
-  const post = repository.findById(id);
+export function getPostById(id: number): Result<Post, PostError> {
+  const post = postsRepository.findById(id);
 
-  if (post === null) {
-    throw new AppError('Post not found', 404);
+  if (!post) {
+    return fail({
+      type: 'NOT_FOUND',
+      message: 'Post not found',
+    });
   }
 
-  return post;
+  return ok(post);
 }
 
-export function createPost(dataPost: CreatePostDTO) {
-  const id = repository.generateId();
-  const timestamp = new Date().toISOString();
+export function createPost(data: CreatePostDTO): Result<Post, PostError> {
+  const posts = postsRepository.findAll();
+
+  const id = generateId(posts);
+  const now = new Date().toISOString();
 
   const post: Post = {
     id,
-    ...dataPost,
-    createdAt: timestamp,
-    updatedAt: timestamp,
+    ...data,
+    createdAt: now,
+    updatedAt: now,
   };
 
-  return repository.createPost(post);
+  const created = postsRepository.createPost(post);
+
+  return ok(created);
 }
 
-export function updatePost(id: number, updateDataPost: UpdatePostDTO) {
-  const post = repository.findById(id);
+export function updatePost(id: number, data: UpdatePostDTO): Result<Post, PostError> {
+  const existing = postsRepository.findById(id);
 
-  if (post === null) {
-    throw new AppError('Post not found', 404);
+  if (!existing) {
+    return fail({
+      type: 'NOT_FOUND',
+      message: 'Post not found',
+    });
   }
 
-  const updatedPost: Post = {
-    ...post,
-    ...updateDataPost,
+  const updated: Post = {
+    ...existing,
+    ...data,
     updatedAt: new Date().toISOString(),
   };
 
-  return repository.updatePost(updatedPost);
-}
+  const saved = postsRepository.updatePost(updated);
 
-export function deletePost(id: number) {
-  const post = repository.findById(id);
-
-  if (post === null) {
-    throw new AppError('Post not found', 404);
+  if (!saved) {
+    return fail({
+      type: 'INTERNAL_ERROR',
+      message: 'Unable to update post',
+    });
   }
 
-  return repository.deletePost(id);
+  return ok(saved);
+}
+
+export function deletePost(id: number): Result<Post, PostError> {
+  const existing = postsRepository.findById(id);
+
+  if (!existing) {
+    return fail({
+      type: 'NOT_FOUND',
+      message: 'Post not found',
+    });
+  }
+
+  const deleted = postsRepository.deletePost(id);
+
+  if (!deleted) {
+    return fail({
+      type: 'INTERNAL_ERROR',
+      message: 'Unable to delete post',
+    });
+  }
+
+  return ok(deleted);
 }
