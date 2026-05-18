@@ -1,0 +1,64 @@
+services:
+  # ============================================================================
+  # POSTGRESQL DATABASE SERVICE
+  # ============================================================================
+  postgres:
+    image: postgres:18.2
+    container_name: ${DB_NAME}_container
+    restart: unless-stopped
+    
+    # Load variables from the .env file
+    env_file:
+      - .env
+      
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "${DB_PORT}:5432"
+      
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    networks:
+      - backend_network
+      
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ${DB_NAME}_pgadmin
+    restart: unless-stopped
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+        
+    env_file:
+      - .env
+      
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+
+    ports:
+      - "${PGADMIN_PORT}:80"
+      
+    networks:
+      - backend_network
+
+networks:
+  backend_network:
+    driver: bridge
+    name: ${DB_NAME}_network
+
+volumes:
+  postgres_data:
+    name: ${DB_NAME}_postgres_data
