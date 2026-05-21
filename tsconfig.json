@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "node16",
+    "target": "ES2023",
+    "module": "ESNext",
     "rootDir": "./src",
     "outDir": "./dist",
 
@@ -13,14 +13,16 @@
 
     "sourceMap": true,
 
-    "moduleResolution": "node16",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
 
     "noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
 
     "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
